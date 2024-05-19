@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.NoResultException;
-import javax.validation.constraints.Null;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
@@ -26,41 +24,25 @@ import static java.lang.Object.*;
     private Dao userDao;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public UserEntity getUser(final String userUuid, final String authorizationToken) throws UserNotFoundException,   UnauthorizedException {
-
-        UserAuthTokenEntity userAuthTokenEntity = userDao.getUserAuthToken(authorizationToken);
-        UserEntity role = userAuthTokenEntity.getUser();
-        if((role != null) && role.getUuid().equals("101")) {
-            UserEntity userEntity = userDao.getUser(userUuid);
-
-            if(userEntity == null){
-                throw new UserNotFoundException("USR-001", "User not found");
-            }
-            return userEntity;
-        }
-        throw new UnauthorizedException("ATH-002", "you are not authorized to fetch user details");
-    }
-    @Transactional(propagation = Propagation.REQUIRED)
         public UserEntity Signup(UserEntity userEntity) throws SignUpRestrictedException {
 
 
-            String user = String.valueOf(userDao.getUserByEmail(userEntity.getEmail()));
+            UserEntity user5 = userDao.getUserByEmail(userEntity.getEmail());
 
+           UserEntity user = userDao.getUserByUsername(userEntity.getUserName());
 
-            String userbyid = String.valueOf(userDao.getUserByUsername(userEntity.getUserName()));
-
-            if (Objects.equals(userbyid, userEntity.getUserName())) {
-                throw new SignUpRestrictedException("SGR-001", "Try any other Username,this Username has already been taken");
-            } else if(Objects.equals(user, userEntity.getEmail())) {
+            if (Objects.equals(user.getUserName(),userEntity.getUserName())) {
+                 throw new SignUpRestrictedException("SGR-001", "Try any other Username,this Username has already been taken");
+            }
+            else if(Objects.equals(user5.getEmail(), userEntity.getEmail())) {
                 throw new SignUpRestrictedException("SGR-002", "This user has already been registered,try with any other emailId");
             }
-            else  {
-                return userEntity;
-            }
-
+   else {
+         return userEntity;
+     }
 }
     @Transactional(propagation = Propagation.REQUIRED)
-    public UserEntity DeleteUser(final String userUuid, final String authToken) throws UserNotFoundException, AuthorizationFailedException, AuthenticationFailedException {
+    public UserEntity DeleteUser(final String userUuid, final String authToken) throws UserNotFoundException, AuthorizationFailedException, AuthenticationFailedException, SignUpRestrictedException {
 
         UserAuthTokenEntity userAuthTokenEntity = userDao.getUserAuthToken(authToken);
         ZonedDateTime now = ZonedDateTime.now();
@@ -80,10 +62,10 @@ import static java.lang.Object.*;
         if(userEntity == null){
             throw new UserNotFoundException("USR-001","User with entered uuid does not exist");
         }
-        String[] encryptedText = cryptographyProvider.encrypt(userEntity.getPassword());
+        String[] encryptedText = PasswordCryptographyProvider.encrypt(userEntity.getPassword());
         userEntity.setSalt(encryptedText[0]);
         userEntity.setPassword(encryptedText[1]);
-        return userEntity;
+          return  userDao.DeleteUser(userEntity);
     }
     @Transactional(propagation = Propagation.REQUIRED)
     public UserEntity Signout( final String authorizationToken) throws UserNotFoundException, UnauthorizedException, SignOutRestrictedException {
@@ -94,12 +76,13 @@ import static java.lang.Object.*;
      throw new SignOutRestrictedException("SGR-001","User is not Signed in");
 
  }
- userAuthTokenEntity.setLogoutAt(ZonedDateTime.now());
+ else {
+     userAuthTokenEntity.setLogoutAt(ZonedDateTime.now());
 
- userDao.updateAuth(userAuthTokenEntity);
+     userDao.updateAuth(userAuthTokenEntity);
 
-    return userEntity;
-
+     return userEntity;
+ }
 
     }
     }

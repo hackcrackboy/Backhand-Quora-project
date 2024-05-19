@@ -1,15 +1,16 @@
 server:
   servlet:
-    port: 8080
+    port: 5432
     contextPath: /api
 
 spring:
 
   application:
-    name:proman-api
+    name:quora-api
 
   datasource:
-    url: jdbc:postgresql://localhost:8080/postgres
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: password
 
